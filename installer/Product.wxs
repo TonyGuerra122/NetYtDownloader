@@ -1,0 +1,26 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="NetYtDownloader"
+    Manufacturer="NetYtDownloader"
+    Version="0.0.1"
+    UpgradeCode="01699888-d7ab-49c3-ab6e-3591082af022"
+    Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="Uma versão mais nova já está instalada." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="ProgramFilesFolder">
+      <Directory Id="INSTALLFOLDER" Name="NetYtDownloader" />
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="NetYtDownloader" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+    </Feature>
+
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(var.PublishDir)\**\*" />
+    </ComponentGroup>
+
+  </Package>
+</Wix>
