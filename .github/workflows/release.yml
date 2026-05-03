@@ -38,6 +38,7 @@ jobs:
       - name: Build MSI
         run: |
           wix build installer/Product.wxs `
+            -acceptEula wix7 `
             -define PublishDir="$(pwd)\publish" `
             -out NetYtDownloader.msi
         env:
