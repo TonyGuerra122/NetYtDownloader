@@ -32,6 +32,9 @@ jobs:
           -p:PublishSingleFile=false
           -o publish
 
+      - name: Copy icon to installer folder
+        run: copy GUI\Assets\icon.ico installer\icon.ico
+
       - name: Install WiX
         run: dotnet tool install --global wix
 
