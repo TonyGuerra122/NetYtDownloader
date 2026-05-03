@@ -40,6 +40,8 @@ jobs:
           wix build installer/Product.wxs `
             -define PublishDir="$(pwd)\publish" `
             -out NetYtDownloader.msi
+        env:
+          WIX_ACCEPT_LICENSE: yes
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
