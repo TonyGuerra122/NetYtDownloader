@@ -11,7 +11,7 @@
 		<MediaTemplate EmbedCab="yes" />
 
 		<!-- 🔥 Ícone do instalador -->
-		<Icon Id="AppIcon" SourceFile="Assets\icon.ico" />
+		<Icon Id="AppIcon" SourceFile="..\GUI\Assets\icon.ico" />
 		<Property Id="ARPPRODUCTICON" Value="AppIcon" />
 
 		<StandardDirectory Id="ProgramFilesFolder">
