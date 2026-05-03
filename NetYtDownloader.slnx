@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Itens de Solução/">
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="FFmpegLibrary/FFmpegLibrary.csproj" />
+  <Project Path="GUI/GUI.csproj" />
+  <Project Path="YtLibrary/YtLibrary.csproj" />
+</Solution>
