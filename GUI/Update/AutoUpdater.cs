@@ -13,11 +13,11 @@ public static class AutoUpdater
     public static async Task<bool> IsUpdateAvailable() => await CheckUpdate() is not null;
     public static async Task CheckForUpdateAsync()
     {
-        using var http = new HttpClient();
-
         var info = await CheckUpdate();
 
         if (info is null) return;
+
+        using var http = new HttpClient();
 
         string tempMsi = Path.Combine(
             Path.GetTempPath(),
@@ -44,19 +44,20 @@ public static class AutoUpdater
 
         string json = await http.GetStringAsync(Consts.UPDATE_URL);
 
-        var info = JsonSerializer.Deserialize<UpdateInfo>(json, Consts.JSON_SERIALIZER_OPTIONS);
+        var info = JsonSerializer.Deserialize<UpdateInfo>(
+            json,
+            Consts.JSON_SERIALIZER_OPTIONS
+        );
 
         if (info is null) return null;
 
-        string version = Assembly
+        var currentVersion = Assembly
             .GetExecutingAssembly()
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion ?? "0.0.1";
-
-        var currentVersion = new Version(version);
+            .GetName()
+            .Version ?? new Version("0.0.1");
         var latestVersion = new Version(info.Version);
 
-        if (currentVersion <= latestVersion) return info;
+        if (latestVersion > currentVersion) return info;
 
         return null;
     }
