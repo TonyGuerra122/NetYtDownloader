@@ -47,7 +47,24 @@ jobs:
         env:
           WIX_ACCEPT_LICENSE: yes
 
+      - name: Generate update.json
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          $repo = "${{ github.repository }}"
+          $tag = "${{ github.ref_name }}"
+          $url = "https://github.com/$repo/releases/download/$tag/NetYtDownloader.msi"
+
+          $json = @{
+            version = $version
+            url = $url
+          } | ConvertTo-Json -Depth 3
+
+          $json | Out-File -FilePath update.json -Encoding utf8
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: NetYtDownloader.msi
+          files: | 
+            NetYtDownloader.msi
+            update.json
