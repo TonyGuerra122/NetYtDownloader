@@ -9,25 +9,15 @@ namespace GUI.Update;
 
 public static class AutoUpdater
 {
+
+    public static async Task<bool> IsUpdateAvailable() => await CheckUpdate() is not null;
     public static async Task CheckForUpdateAsync()
     {
         using var http = new HttpClient();
 
-        string json = await http.GetStringAsync(Consts.UPDATE_URL);
-
-        var info = JsonSerializer.Deserialize<UpdateInfo>(json, Consts.JSON_SERIALIZER_OPTIONS);
+        var info = await CheckUpdate();
 
         if (info is null) return;
-
-        string version = Assembly
-            .GetExecutingAssembly()
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion ?? "0.0.1";
-
-        var currentVersion = new Version(version);
-        var latestVersion = new Version(info.Version);
-
-        if (currentVersion <= latestVersion) return;
 
         string tempMsi = Path.Combine(
             Path.GetTempPath(),
@@ -46,6 +36,29 @@ public static class AutoUpdater
         });
 
         Environment.Exit(0);
+    }
+
+    private static async Task<UpdateInfo?> CheckUpdate()
+    {
+        using var http = new HttpClient();
+
+        string json = await http.GetStringAsync(Consts.UPDATE_URL);
+
+        var info = JsonSerializer.Deserialize<UpdateInfo>(json, Consts.JSON_SERIALIZER_OPTIONS);
+
+        if (info is null) return null;
+
+        string version = Assembly
+            .GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion ?? "0.0.1";
+
+        var currentVersion = new Version(version);
+        var latestVersion = new Version(info.Version);
+
+        if (currentVersion <= latestVersion) return info;
+
+        return null;
     }
 
     private class UpdateInfo

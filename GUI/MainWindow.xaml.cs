@@ -9,6 +9,7 @@ namespace GUI;
 public partial class MainWindow : Window
 {
     private readonly FFmpegService _ffmpegService;
+    private readonly MainViewModel _mainViewModel;
 
     public MainWindow()
     {
@@ -20,13 +21,17 @@ public partial class MainWindow : Window
         _ffmpegService = new FFmpegService(binariesFolder);
         var youtubeService = new YoutubeSearchService(_ffmpegService, videosFolder);
 
-        DataContext = new MainViewModel(youtubeService);
+        _mainViewModel = new MainViewModel(youtubeService);
+
+        DataContext = _mainViewModel;
 
         Loaded += MainWindowLoaded;
     }
 
     private async void MainWindowLoaded(object sender, RoutedEventArgs e)
     {
+        await _mainViewModel.CheckAndInstallUpdate();
+
         if (!_ffmpegService.IsFFmpegPresent())
         {
             var result = MessageBox.Show(

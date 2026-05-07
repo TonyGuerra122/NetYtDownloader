@@ -1,4 +1,5 @@
 ﻿using GUI.Commands;
+using GUI.Update;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -80,6 +81,25 @@ public class MainViewModel : INotifyPropertyChanged
         DownloadAudioCommand = new RelayCommand<YoutubeVideoItem>(
             async audio => await DownloadAudio(audio)
         );
+    }
+
+    public async Task CheckAndInstallUpdate()
+    {
+        if (await AutoUpdater.IsUpdateAvailable())
+        {
+            IsLoading = true;
+            LoadingText = "Atualização disponível... (atualizando)";
+
+            try
+            {
+                await AutoUpdater.CheckForUpdateAsync();
+            }
+            finally
+            {
+                IsLoading = false;
+                LoadingText = string.Empty;
+            }
+        }
     }
 
     private async Task SearchAsync()
