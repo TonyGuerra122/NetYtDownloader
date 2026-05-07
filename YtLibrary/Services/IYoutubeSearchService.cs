@@ -5,6 +5,6 @@ namespace YtLibrary.Services;
 public interface IYoutubeSearchService
 {
     Task<IReadOnlyList<YoutubeVideoItem>> SearchAsync(string query);
-
-    Task DownloadAsync(YoutubeVideoItem video);
+    Task DownloadVideoAsync(YoutubeVideoItem video);
+    Task DownloadAudioAsync(YoutubeVideoItem video);
 }

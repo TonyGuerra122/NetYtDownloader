@@ -298,13 +298,24 @@
 
                                         <Button Content="⬇"
                                                 Height="34"
+                                                Margin="0,0,0,8"
                                                 Background="#FF0033"
                                                 Foreground="White"
                                                 BorderThickness="0"
                                                 FontSize="14"
                                                 Cursor="Hand"
-                                                Command="{Binding DataContext.DownloadCommand, Source={x:Reference VideosListBox}}"
+                                                Command="{Binding DataContext.DownloadVideoCommand, Source={x:Reference VideosListBox}}"
                                                 CommandParameter="{Binding}"/>
+
+                                        <Button Content="🎵"
+                                            Height="34"
+                                            Background="#FF0033"
+                                            Foreground="White"
+                                            BorderThickness="0"
+                                            FontSize="14"
+                                            Cursor="Hand"
+                                            Command="{Binding DataContext.DownloadAudioCommand, Source={x:Reference VideosListBox}}"
+                                            CommandParameter="{Binding}"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>

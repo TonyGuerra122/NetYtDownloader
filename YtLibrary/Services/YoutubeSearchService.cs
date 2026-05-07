@@ -35,7 +35,7 @@ public class YoutubeSearchService(FFmpegService ffmpegService, string videosFold
         return [.. results];
     }
 
-    public async Task DownloadAsync(YoutubeVideoItem video)
+    public async Task DownloadVideoAsync(YoutubeVideoItem video)
     {
         var manifest = await _client.Videos.Streams.GetManifestAsync(video.Id);
 
@@ -65,6 +65,23 @@ public class YoutubeSearchService(FFmpegService ffmpegService, string videosFold
             audioStream,
             outputFile
         );
+
+        OpenVideosFolder();
+    }
+
+    public async Task DownloadAudioAsync(YoutubeVideoItem video)
+    {
+        var manifest = await _client.Videos.Streams.GetManifestAsync(video.Id);
+
+        string fileName = SanitizeFileName(video.Title) + ".mp4";
+        string outputFile = Path.Combine(_videosFolder, fileName);
+
+        var audioStreamInfo = manifest
+            .GetAudioOnlyStreams()
+            .Where(s => s.Container == Container.Mp4)
+            .GetWithHighestBitrate() ?? throw new Exception("Não foi possível encontrar streams compatíveis para download.");
+
+        await _client.Videos.Streams.DownloadAsync(audioStreamInfo, outputFile);
 
         OpenVideosFolder();
     }

@@ -62,7 +62,8 @@ public class MainViewModel : INotifyPropertyChanged
 
     public ICommand SearchCommand { get; }
     public ICommand OpenVideoCommand { get; }
-    public ICommand DownloadCommand { get; }
+    public ICommand DownloadVideoCommand { get; }
+    public ICommand DownloadAudioCommand { get; }
 
     public MainViewModel(YoutubeSearchService youtubeSearchService)
     {
@@ -72,8 +73,12 @@ public class MainViewModel : INotifyPropertyChanged
 
         OpenVideoCommand = new RelayCommand<YoutubeVideoItem>(OpenVideo);
 
-        DownloadCommand = new RelayCommand<YoutubeVideoItem>(
+        DownloadVideoCommand = new RelayCommand<YoutubeVideoItem>(
             async video => await DownloadVideo(video)
+        );
+
+        DownloadAudioCommand = new RelayCommand<YoutubeVideoItem>(
+            async audio => await DownloadAudio(audio)
         );
     }
 
@@ -114,15 +119,32 @@ public class MainViewModel : INotifyPropertyChanged
 
     private async Task DownloadVideo(YoutubeVideoItem? video)
     {
-        if (video is null)
-            return;
+        if (video is null) return;
 
         IsLoading = true;
         LoadingText = "Baixando vídeo...";
 
         try
         {
-            await _youtubeSearchService.DownloadAsync(video);
+            await _youtubeSearchService.DownloadVideoAsync(video);
+        }
+        finally
+        {
+            IsLoading = false;
+            LoadingText = string.Empty;
+        }
+    }
+
+    private async Task DownloadAudio(YoutubeVideoItem? video)
+    {
+        if (video is null) return;
+
+        IsLoading = true;
+        LoadingText = "Baixando audio...";
+
+        try
+        {
+            await _youtubeSearchService.DownloadAudioAsync(video);
         }
         finally
         {
