@@ -9,7 +9,6 @@ namespace GUI.Update;
 
 public static class AutoUpdater
 {
-
     public static async Task<bool> IsUpdateAvailable() => await CheckUpdate() is not null;
     public static async Task CheckForUpdateAsync()
     {
