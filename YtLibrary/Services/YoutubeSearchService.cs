@@ -10,6 +10,8 @@ namespace YtLibrary.Services;
 
 public class YoutubeSearchService(FFmpegService ffmpegService, string videosFolder) : IYoutubeSearchService
 {
+    private const int MAX_PARALLEL_DOWNLOADS = 4;
+
     private readonly YoutubeClient _client = new();
     private readonly FFmpegService _ffmpegService = ffmpegService;
     private readonly string _videosFolder = videosFolder;
@@ -133,13 +135,22 @@ public class YoutubeSearchService(FFmpegService ffmpegService, string videosFold
 
         try
         {
-            await Parallel.ForEachAsync(links, async (link, _) =>
+            await Parallel.ForEachAsync(
+            links,
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = MAX_PARALLEL_DOWNLOADS
+            },
+            async (link, cancellationToken) =>
             {
                 try
                 {
-                    var video = await _client.Videos.GetAsync(link, _);
+                    var video = await _client.Videos.GetAsync(link, cancellationToken);
 
-                    var manifest = await _client.Videos.Streams.GetManifestAsync(video.Id, _);
+                    var manifest = await _client.Videos.Streams.GetManifestAsync(
+                        video.Id,
+                        cancellationToken
+                    );
 
                     var audioStreamInfo = manifest
                         .GetAudioOnlyStreams()
@@ -152,7 +163,11 @@ public class YoutubeSearchService(FFmpegService ffmpegService, string videosFold
                     string fileName = SanitizeFileName(video.Title) + ".mp4";
                     string outputFile = Path.Combine(tempFolder, fileName);
 
-                    await _client.Videos.Streams.DownloadAsync(audioStreamInfo, outputFile, cancellationToken: _);
+                    await _client.Videos.Streams.DownloadAsync(
+                        audioStreamInfo,
+                        outputFile,
+                        cancellationToken: cancellationToken
+                    );
 
                     lock (locker)
                     {

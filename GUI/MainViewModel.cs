@@ -13,6 +13,8 @@ namespace GUI;
 
 public class MainViewModel : INotifyPropertyChanged
 {
+    private const int MAX_PARALLEL_LINKS = 4;
+
     private readonly YoutubeSearchService _youtubeSearchService;
 
     private string _searchText = string.Empty;
@@ -214,8 +216,11 @@ public class MainViewModel : INotifyPropertyChanged
 
             await Parallel.ForEachAsync(
                 links,
-                new ParallelOptions { MaxDegreeOfParallelism = 4 },
-                async (link, _) =>
+                new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = MAX_PARALLEL_LINKS
+                },
+                async (link, cancellationToken) =>
                 {
                     try
                     {
@@ -223,7 +228,7 @@ public class MainViewModel : INotifyPropertyChanged
 
                         if (video is null) return;
 
-                        Application.Current.Dispatcher.Invoke(() =>
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
                         {
                             Videos.Add(video);
                         });
