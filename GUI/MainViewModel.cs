@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
 using YtLibrary.Models;
 using YtLibrary.Services;
@@ -18,6 +19,8 @@ public class MainViewModel : INotifyPropertyChanged
     private bool _isLoading = false;
     private string _loadingText = string.Empty;
     private YoutubeVideoItem? _selectedVideo = null;
+    private bool zipAudio = false;
+    private string linksText = string.Empty;
 
     public ObservableCollection<YoutubeVideoItem> Videos { get; } = [];
 
@@ -61,10 +64,32 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    public bool ZipAudio
+    {
+        get => zipAudio;
+        set
+        {
+            zipAudio = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string LinksText
+    {
+        get => linksText;
+        set
+        {
+            linksText = value;
+            OnPropertyChanged();
+        }
+    }
+
     public ICommand SearchCommand { get; }
     public ICommand OpenVideoCommand { get; }
     public ICommand DownloadVideoCommand { get; }
     public ICommand DownloadAudioCommand { get; }
+    public ICommand AddLinksCommand { get; }
+    public ICommand DownloadAllLinksCommand { get; }
 
     public MainViewModel(YoutubeSearchService youtubeSearchService)
     {
@@ -81,6 +106,9 @@ public class MainViewModel : INotifyPropertyChanged
         DownloadAudioCommand = new RelayCommand<YoutubeVideoItem>(
             async audio => await DownloadAudio(audio)
         );
+
+        AddLinksCommand = new RelayCommand<YoutubeVideoItem>(async _ => await AddLinks());
+        DownloadAllLinksCommand = new RelayCommand<YoutubeVideoItem>(async _ => await DownloadLinksAsZip());
     }
 
     public async Task CheckAndInstallUpdate()
@@ -164,7 +192,80 @@ public class MainViewModel : INotifyPropertyChanged
 
         try
         {
-            await _youtubeSearchService.DownloadAudioAsync(video);
+            await _youtubeSearchService.DownloadAudioAsync(video, ZipAudio);
+        }
+        finally
+        {
+            IsLoading = false;
+            LoadingText = string.Empty;
+        }
+    }
+
+    private async Task AddLinks()
+    {
+        if (string.IsNullOrWhiteSpace(LinksText)) return;
+
+        IsLoading = true;
+        LoadingText = "Carregando links...";
+
+        try
+        {
+            var links = GetLinksFromText();
+
+            await Parallel.ForEachAsync(
+                links,
+                new ParallelOptions { MaxDegreeOfParallelism = 4 },
+                async (link, _) =>
+                {
+                    try
+                    {
+                        var video = await _youtubeSearchService.GetVideoByUrlAsync(link);
+
+                        if (video is null) return;
+
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            Videos.Add(video);
+                        });
+                    }
+                    catch
+                    {
+                        // ignora link inválido
+                    }
+                });
+
+            LinksText = string.Empty;
+        }
+        finally
+        {
+            IsLoading = false;
+            LoadingText = string.Empty;
+        }
+    }
+
+    private List<string> GetLinksFromText()
+    {
+        return [.. LinksText
+            .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct()];
+    }
+
+    private async Task DownloadLinksAsZip()
+    {
+        if (string.IsNullOrWhiteSpace(LinksText)) return;
+
+        IsLoading = true;
+        LoadingText = "Preparando downloads...";
+
+        try
+        {
+            var links = GetLinksFromText();
+
+            await _youtubeSearchService.DownloadAudiosAsZipAsync(links);
+
+            LinksText = string.Empty;
         }
         finally
         {
