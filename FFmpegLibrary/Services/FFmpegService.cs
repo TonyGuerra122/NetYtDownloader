@@ -18,7 +18,7 @@ public class FFmpegService : IFFmpegService
 
     public bool IsFFmpegPresent() => File.Exists(_ffmpegPath);
 
-    public async Task EnsureFFmpegInstalledAsync()
+    public async Task EnsureFFmpegInstalledAsync(IProgress<DownloadProgress>? progress = null)
     {
         if (IsFFmpegPresent())
             return;
@@ -35,13 +35,42 @@ public class FFmpegService : IFFmpegService
 
         using var httpClient = new HttpClient();
 
-        await using (var zipStream = await httpClient.GetStreamAsync(zipUrl))
+        progress?.Report(new DownloadProgress { Message = "Iniciando download do FFmpeg..." });
+
+        var response = await httpClient.GetAsync(zipUrl, HttpCompletionOption.ResponseHeadersRead);
+        response.EnsureSuccessStatusCode();
+
+        var totalBytes = response.Content.Headers.ContentLength ?? -1L;
+        var canReportProgress = totalBytes != -1;
+
+        await using (var contentStream = await response.Content.ReadAsStreamAsync())
         await using (var fileStream = File.Create(zipPath))
         {
-            await zipStream.CopyToAsync(fileStream);
+            var totalRead = 0L;
+            var buffer = new byte[8192];
+            int read;
+
+            while ((read = await contentStream.ReadAsync(buffer, 0, buffer.Length)) != 0)
+            {
+                await fileStream.WriteAsync(buffer, 0, read);
+                totalRead += read;
+
+                if (canReportProgress)
+                {
+                    progress?.Report(new DownloadProgress
+                    {
+                        BytesDownloaded = totalRead,
+                        TotalBytes = totalBytes,
+                        Message = $"Baixando FFmpeg... {(totalRead * 100) / totalBytes}%"
+                    });
+                }
+            }
         }
 
+        progress?.Report(new DownloadProgress { Message = "Extraindo arquivos..." });
         ZipFile.ExtractToDirectory(zipPath, extractPath, true);
+
+        progress?.Report(new DownloadProgress { Message = "Finalizando instalação..." });
 
         string? ffmpegExe = Directory
             .GetFiles(extractPath, "ffmpeg.exe", SearchOption.AllDirectories)
@@ -50,6 +79,8 @@ public class FFmpegService : IFFmpegService
 
         File.Delete(zipPath);
         Directory.Delete(extractPath, true);
+
+        progress?.Report(new DownloadProgress { BytesDownloaded = 100, TotalBytes = 100, Message = "FFmpeg instalado com sucesso!" });
     }
 
     public async Task JoinStreamsToFileAsync(

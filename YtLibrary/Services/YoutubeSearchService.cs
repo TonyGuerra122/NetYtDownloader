@@ -57,17 +57,32 @@ public class YoutubeSearchService(FFmpegService ffmpegService, string videosFold
     {
         var manifest = await _client.Videos.Streams.GetManifestAsync(video.Id);
 
-        var videoStreamInfo = manifest
+        var videoStreams = manifest
             .GetVideoOnlyStreams()
             .Where(s => s.Container == Container.Mp4)
-            .GetWithHighestVideoQuality();
+            .ToList();
 
-        var audioStreamInfo = manifest
+        var audioStreams = manifest
             .GetAudioOnlyStreams()
             .Where(s => s.Container == Container.Mp4)
-            .GetWithHighestBitrate();
+            .ToList();
 
-        if (videoStreamInfo is null || audioStreamInfo is null) throw new Exception("Não foi possível encontrar streams compatíveis para download.");
+        // Se não houver MP4, tenta com qualquer container disponível
+        if (videoStreams.Count == 0)
+        {
+            videoStreams = manifest.GetVideoOnlyStreams().ToList();
+        }
+
+        if (audioStreams.Count == 0)
+        {
+            audioStreams = manifest.GetAudioOnlyStreams().ToList();
+        }
+
+        if (videoStreams.Count == 0 || audioStreams.Count == 0)
+            throw new Exception($"Não foi possível encontrar streams compatíveis para download do vídeo '{video.Title}'.");
+
+        var videoStreamInfo = videoStreams.GetWithHighestVideoQuality();
+        var audioStreamInfo = audioStreams.GetWithHighestBitrate();
 
         string fileName = SanitizeFileName(video.Title) + ".mp4";
         string outputFile = Path.Combine(_videosFolder, fileName);
@@ -94,10 +109,19 @@ public class YoutubeSearchService(FFmpegService ffmpegService, string videosFold
         string fileName = SanitizeFileName(video.Title) + ".mp4";
         string outputFile = Path.Combine(_videosFolder, fileName);
 
-        var audioStreamInfo = manifest
+        var audioStreams = manifest
             .GetAudioOnlyStreams()
             .Where(s => s.Container == Container.Mp4)
-            .GetWithHighestBitrate() ?? throw new Exception("Não foi possível encontrar streams compatíveis para download.");
+            .ToList();
+
+        // Se não houver MP4, tenta com qualquer container disponível
+        if (audioStreams.Count == 0)
+        {
+            audioStreams = manifest.GetAudioOnlyStreams().ToList();
+        }
+
+        var audioStreamInfo = audioStreams.OrderByDescending(s => s.Bitrate).FirstOrDefault() 
+            ?? throw new Exception($"Não foi possível encontrar streams de áudio compatíveis para download do vídeo '{video.Title}'.");
 
         await _client.Videos.Streams.DownloadAsync(audioStreamInfo, outputFile);
 

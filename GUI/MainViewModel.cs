@@ -178,6 +178,15 @@ public class MainViewModel : INotifyPropertyChanged
         {
             await _youtubeSearchService.DownloadVideoAsync(video);
         }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Erro ao baixar vídeo:\n\n{ex.Message}",
+                "Erro no Download",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error
+            );
+        }
         finally
         {
             IsLoading = false;
@@ -195,6 +204,15 @@ public class MainViewModel : INotifyPropertyChanged
         try
         {
             await _youtubeSearchService.DownloadAudioAsync(video, ZipAudio);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Erro ao baixar áudio:\n\n{ex.Message}",
+                "Erro no Download",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error
+            );
         }
         finally
         {
@@ -271,6 +289,15 @@ public class MainViewModel : INotifyPropertyChanged
             await _youtubeSearchService.DownloadAudiosAsZipAsync(links);
 
             LinksText = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                $"Erro ao baixar áudios:\n\n{ex.Message}",
+                "Erro no Download",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error
+            );
         }
         finally
         {

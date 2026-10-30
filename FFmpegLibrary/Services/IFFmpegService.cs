@@ -3,7 +3,7 @@
 public interface IFFmpegService
 {
     bool IsFFmpegPresent();
-    Task EnsureFFmpegInstalledAsync();
+    Task EnsureFFmpegInstalledAsync(IProgress<DownloadProgress>? progress = null);
     Task JoinStreamsToFileAsync(
         Stream videoStream,
         Stream audioStream,

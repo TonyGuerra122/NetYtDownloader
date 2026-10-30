@@ -17,7 +17,7 @@ public partial class MainWindow : Window
 
         string videosFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "NetYtDownloader");
         string binariesFolder = Path.Combine(videosFolder, "bin");
-        
+
         _ffmpegService = new FFmpegService(binariesFolder);
         var youtubeService = new YoutubeSearchService(_ffmpegService, videosFolder);
 
@@ -43,11 +43,22 @@ public partial class MainWindow : Window
 
             if (result == MessageBoxResult.Yes)
             {
+                var progressWindow = new ProgressWindow();
+                progressWindow.Show();
+
                 try
                 {
-                    Mouse.OverrideCursor = Cursors.Wait;
+                    var progress = new Progress<DownloadProgress>(p =>
+                    {
+                        Dispatcher.Invoke(() =>
+                        {
+                            progressWindow.UpdateProgress(p.PercentComplete, p.Message);
+                        });
+                    });
 
-                    await _ffmpegService.EnsureFFmpegInstalledAsync();
+                    await _ffmpegService.EnsureFFmpegInstalledAsync(progress);
+
+                    progressWindow.Close();
 
                     MessageBox.Show(
                         "FFmpeg instalado com sucesso!",
@@ -58,16 +69,14 @@ public partial class MainWindow : Window
                 }
                 catch (Exception ex)
                 {
+                    progressWindow.Close();
+
                     MessageBox.Show(
                         $"Erro ao instalar FFmpeg:\n{ex.Message}",
                         "Erro",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error
                     );
-                }
-                finally
-                {
-                    Mouse.OverrideCursor = null;
                 }
             }
             else
